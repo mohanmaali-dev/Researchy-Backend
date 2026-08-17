@@ -158,9 +158,10 @@ export const getFollowUps = async ({
   opportunityId,
   upcoming = false,
   limit,
+  referenceDate,
 } = {}) => {
   const filters = {};
-  const today = getStartOfTodayUtc();
+  const today = getStartOfTodayUtc(referenceDate || new Date());
 
   if (status && ![...FOLLOW_UP_STATUSES, 'Overdue'].includes(status)) {
     throw createError('Invalid follow-up filter', 400);
@@ -196,7 +197,8 @@ export const getFollowUps = async ({
   return followUps.map(toFollowUpResponse);
 };
 
-export const getUpcomingFollowUps = (limit) => getFollowUps({ upcoming: true, limit });
+export const getUpcomingFollowUps = (limit, referenceDate) =>
+  getFollowUps({ upcoming: true, limit, referenceDate });
 
 export const getFollowUpById = async (followUpId) => {
   const followUp = await getFollowUpDocument(followUpId);

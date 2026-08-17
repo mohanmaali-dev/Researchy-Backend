@@ -9,6 +9,26 @@ import { getProblemPatterns } from '../problems/problem.service.js';
 const DASHBOARD_LIMIT = 5;
 const RECENT_PER_TYPE = 2;
 
+const getReferenceDate = (value) => {
+  if (!value) return getStartOfTodayUtc();
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const error = new Error('Dashboard date must use YYYY-MM-DD format');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const date = new Date(`${value}T00:00:00.000Z`);
+
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value) {
+    const error = new Error('Dashboard date must be a valid date');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  return date;
+};
+
 const getStartOfWeekUtc = (now = new Date()) => {
   const today = getStartOfTodayUtc(now);
   const daysSinceMonday = (today.getUTCDay() + 6) % 7;
@@ -95,9 +115,11 @@ const getRecentRecords = async () => {
     .slice(0, DASHBOARD_LIMIT + 1);
 };
 
-export const getDashboard = async () => {
-  const today = getStartOfTodayUtc();
-  const weekStart = getStartOfWeekUtc();
+export const getDashboard = async (date) => {
+  const referenceDate = getReferenceDate(date);
+  const weekStart = getStartOfWeekUtc(referenceDate);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setUTCDate(weekEnd.getUTCDate() + 7);
 
   const [
     totalBusinesses,
@@ -121,19 +143,20 @@ export const getDashboard = async () => {
     Problem.countDocuments(),
     Opportunity.countDocuments(),
     FollowUp.countDocuments({ status: 'Pending' }),
-    FollowUp.countDocuments({ status: 'Pending', followUpDate: { $lt: today } }),
-    Business.countDocuments({ dateVisitedOrResearched: { $gte: weekStart } }),
-    Conversation.countDocuments({ conversationDate: { $gte: weekStart } }),
-    Problem.countDocuments({ createdAt: { $gte: weekStart } }),
-    Opportunity.countDocuments({ createdAt: { $gte: weekStart } }),
+    FollowUp.countDocuments({ status: 'Pending', followUpDate: { $lt: referenceDate } }),
+    Business.countDocuments({ dateVisitedOrResearched: { $gte: weekStart, $lt: weekEnd } }),
+    Conversation.countDocuments({ conversationDate: { $gte: weekStart, $lt: weekEnd } }),
+    Problem.countDocuments({ createdAt: { $gte: weekStart, $lt: weekEnd } }),
+    Opportunity.countDocuments({ createdAt: { $gte: weekStart, $lt: weekEnd } }),
     getStrongOpportunities(),
     getProblemPatterns({ limit: DASHBOARD_LIMIT }),
-    getUpcomingFollowUps(DASHBOARD_LIMIT),
-    getFollowUps({ status: 'Overdue', limit: DASHBOARD_LIMIT }),
+    getUpcomingFollowUps(DASHBOARD_LIMIT, referenceDate),
+    getFollowUps({ status: 'Overdue', limit: DASHBOARD_LIMIT, referenceDate }),
     getRecentRecords(),
   ]);
 
   return {
+    referenceDate,
     summary: {
       totalBusinesses,
       totalConversations,

@@ -53,6 +53,16 @@ const DEFAULT_INDUSTRIES = [
   'Technology',
 ];
 
+const BUSINESS_SORTS = {
+  newest: { createdAt: -1 },
+  updated: { updatedAt: -1 },
+  oldest: { createdAt: 1 },
+  name: { companyName: 1, _id: 1 },
+};
+
+const DEFAULT_PAGE_SIZE = 10;
+const MAXIMUM_PAGE_SIZE = 50;
+
 const createError = (message, statusCode) => {
   const error = new Error(message);
   error.statusCode = statusCode;
@@ -63,6 +73,19 @@ const ensureValidId = (businessId) => {
   if (!mongoose.isValidObjectId(businessId)) {
     throw createError('Invalid business ID', 400);
   }
+};
+
+const escapeRegularExpression = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const parsePositiveInteger = (value, fallback, field) => {
+  if (value === undefined || value === '') return fallback;
+
+  const parsedValue = Number(value);
+  if (!Number.isInteger(parsedValue) || parsedValue < 1) {
+    throw createError(`${field} must be a positive integer`, 400);
+  }
+
+  return parsedValue;
 };
 
 const cleanBusinessData = (data) =>
@@ -151,9 +174,71 @@ export const createBusiness = async (data) => {
   return Business.create(cleanedData);
 };
 
-export const getBusinesses = async () => {
-  const businesses = await Business.find().sort({ createdAt: -1 }).lean();
-  return businesses.map(withLegacyContactFallbacks);
+export const getBusinesses = async (options = {}) => {
+  const usesPagination = ['page', 'limit', 'search', 'status', 'type', 'industry', 'sort'].some(
+    (field) => options[field] !== undefined,
+  );
+
+  if (!usesPagination) {
+    const businesses = await Business.find().sort({ createdAt: -1 }).lean();
+    return businesses.map(withLegacyContactFallbacks);
+  }
+
+  const page = parsePositiveInteger(options.page, 1, 'Page');
+  const requestedLimit = parsePositiveInteger(options.limit, DEFAULT_PAGE_SIZE, 'Limit');
+  const limit = Math.min(requestedLimit, MAXIMUM_PAGE_SIZE);
+  const filter = {};
+  const search = typeof options.search === 'string' ? options.search.trim() : '';
+  const status = typeof options.status === 'string' ? options.status.trim() : '';
+  const businessType = typeof options.type === 'string' ? options.type.trim() : '';
+  const industry = typeof options.industry === 'string' ? options.industry.trim() : '';
+  const sortKey = BUSINESS_SORTS[options.sort] ? options.sort : 'newest';
+
+  if (status && status !== 'All') {
+    if (!BUSINESS_STATUSES.includes(status)) throw createError('Invalid business status', 400);
+    filter.status = status;
+  }
+
+  if (businessType && businessType !== 'All') {
+    filter.businessType = new RegExp(`^${escapeRegularExpression(businessType)}$`, 'i');
+  }
+
+  if (industry && industry !== 'All') {
+    filter.industry = new RegExp(`^${escapeRegularExpression(industry)}$`, 'i');
+  }
+
+  if (search) {
+    const searchExpression = new RegExp(escapeRegularExpression(search), 'i');
+    filter.$or = [
+      { companyName: searchExpression },
+      { businessType: searchExpression },
+      { industry: searchExpression },
+      { location: searchExpression },
+    ];
+  }
+
+  const [businesses, totalItems] = await Promise.all([
+    Business.find(filter)
+      .sort(BUSINESS_SORTS[sortKey])
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .lean(),
+    Business.countDocuments(filter),
+  ]);
+
+  const totalPages = Math.max(1, Math.ceil(totalItems / limit));
+
+  return {
+    businesses: businesses.map(withLegacyContactFallbacks),
+    pagination: {
+      page,
+      limit,
+      totalItems,
+      totalPages,
+      hasPreviousPage: page > 1,
+      hasNextPage: page < totalPages,
+    },
+  };
 };
 
 export const getBusinessOptions = async () => {

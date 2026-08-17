@@ -10,13 +10,15 @@ export const createBusiness = async (request, response) => {
   });
 };
 
-export const getBusinesses = async (_request, response) => {
-  const businesses = await businessService.getBusinesses();
+export const getBusinesses = async (request, response) => {
+  const result = await businessService.getBusinesses(request.query);
+  const isPaginated = !Array.isArray(result);
 
   return response.status(200).json({
     success: true,
     message: 'Businesses fetched successfully',
-    data: businesses,
+    data: isPaginated ? result.businesses : result,
+    ...(isPaginated ? { pagination: result.pagination } : {}),
   });
 };
 

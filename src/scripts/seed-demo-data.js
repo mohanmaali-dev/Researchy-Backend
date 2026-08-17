@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { pathToFileURL } from 'node:url';
 
 import { connectDatabase } from '../config/database.js';
 import { Business } from '../modules/businesses/business.model.js';
@@ -420,7 +421,7 @@ const followUpDefinitions = [
   },
 ];
 
-const upsertDemoData = async () => {
+export const upsertDemoData = async () => {
   const savedRecords = [];
 
   for (const record of demoRecords) {
@@ -504,13 +505,17 @@ const upsertDemoData = async () => {
   };
 };
 
-try {
-  await connectDatabase();
-  const counts = await upsertDemoData();
-  console.log('Demo data is ready:', counts);
-} catch (error) {
-  console.error(`Unable to seed demo data: ${error.message}`);
-  process.exitCode = 1;
-} finally {
-  await mongoose.disconnect();
+const isRunDirectly = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+
+if (isRunDirectly) {
+  try {
+    await connectDatabase();
+    const counts = await upsertDemoData();
+    console.log('Demo data is ready:', counts);
+  } catch (error) {
+    console.error(`Unable to seed demo data: ${error.message}`);
+    process.exitCode = 1;
+  } finally {
+    await mongoose.disconnect();
+  }
 }
