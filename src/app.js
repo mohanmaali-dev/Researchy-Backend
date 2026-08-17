@@ -20,6 +20,7 @@ app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(cors(corsOptions));
 app.use(compression());
 app.use(globalRateLimiter);
+app.use(`${env.apiPrefix}/backups/restore`, express.json({ limit: '5mb' }));
 app.use(express.json({ limit: env.jsonBodyLimit }));
 app.use(express.urlencoded({ extended: true, limit: env.jsonBodyLimit }));
 app.use(cookieParser());

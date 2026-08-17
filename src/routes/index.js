@@ -1,6 +1,7 @@
 import { Router } from 'express';
 
 import { authRouter } from '../modules/auth/auth.routes.js';
+import { backupRouter } from '../modules/backups/backup.routes.js';
 import { businessRouter } from '../modules/businesses/business.routes.js';
 import { conversationRouter } from '../modules/conversations/conversation.routes.js';
 import { contactRouter } from '../modules/contacts/contact.routes.js';
@@ -12,6 +13,7 @@ import { learningRouter } from '../modules/learning/learning.routes.js';
 import { noteRouter } from '../modules/notes/note.routes.js';
 import { opportunityRouter } from '../modules/opportunities/opportunity.routes.js';
 import { problemRouter } from '../modules/problems/problem.routes.js';
+import { searchRouter } from '../modules/search/search.routes.js';
 import { userRouter } from '../modules/users/user.routes.js';
 
 export const apiRouter = Router();
@@ -30,6 +32,7 @@ apiRouter.get('/health', (_request, response) => {
 
 apiRouter.use('/users', userRouter);
 apiRouter.use('/auth', authRouter);
+apiRouter.use('/backups', authenticate, backupRouter);
 apiRouter.use('/notes', noteRouter);
 apiRouter.use('/businesses', authenticate, businessRouter);
 apiRouter.use('/conversations', authenticate, conversationRouter);
@@ -40,3 +43,4 @@ apiRouter.use('/problems', authenticate, problemRouter);
 apiRouter.use('/opportunities', authenticate, opportunityRouter);
 apiRouter.use('/follow-ups', authenticate, followUpRouter);
 apiRouter.use('/learning', learningRouter);
+apiRouter.use('/search', authenticate, searchRouter);
