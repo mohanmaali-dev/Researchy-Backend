@@ -4,7 +4,7 @@ const isProduction = env.nodeEnv === 'production';
 const sharedCookieOptions = {
   httpOnly: true,
   path: '/',
-  sameSite: isProduction ? 'none' : 'lax',
+  sameSite: isProduction ? 'strict' : 'lax',
   secure: isProduction,
 };
 

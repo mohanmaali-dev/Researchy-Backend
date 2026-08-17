@@ -18,6 +18,22 @@ const authTokenSchema = new mongoose.Schema(
       required: true,
       expires: 0,
     },
+    userAgent: {
+      type: String,
+      trim: true,
+      maxlength: 500,
+      default: '',
+    },
+    ipAddress: {
+      type: String,
+      trim: true,
+      maxlength: 100,
+      default: '',
+    },
+    lastUsedAt: {
+      type: Date,
+      default: Date.now,
+    },
   },
   { timestamps: true, versionKey: false },
 );

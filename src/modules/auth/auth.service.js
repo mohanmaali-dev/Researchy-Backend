@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
 
 import { env } from '../../config/env.js';
 import { sendEmail } from '../../services/email.service.js';
@@ -16,26 +17,31 @@ const createError = (message, statusCode) => {
   return error;
 };
 
-const saveRefreshToken = async (userId, refreshToken) => {
+const saveRefreshToken = async (userId, sessionId, refreshToken, session = {}) => {
   const decoded = jwt.decode(refreshToken);
 
   await AuthToken.create({
+    _id: sessionId,
     user: userId,
     tokenHash: hashToken(refreshToken),
     expiresAt: new Date(decoded.exp * 1000),
+    userAgent: session.userAgent || '',
+    ipAddress: session.ipAddress || '',
+    lastUsedAt: new Date(),
   });
 };
 
-const issueTokens = async (userId) => {
-  const accessToken = createAccessToken(userId);
-  const refreshToken = createRefreshToken(userId);
-  await saveRefreshToken(userId, refreshToken);
+const issueTokens = async (userId, session) => {
+  const sessionId = new mongoose.Types.ObjectId();
+  const accessToken = createAccessToken(userId, sessionId.toString());
+  const refreshToken = createRefreshToken(userId, sessionId.toString());
+  await saveRefreshToken(userId, sessionId, refreshToken, session);
   return { accessToken, refreshToken };
 };
 
-export const register = async (data) => {
+export const register = async (data, session) => {
   const user = await createUser(data);
-  const tokens = await issueTokens(user.id);
+  const tokens = await issueTokens(user.id, session);
 
   if (env.requireEmailVerification) {
     await sendVerificationEmail(user.id);
@@ -44,7 +50,7 @@ export const register = async (data) => {
   return { user, ...tokens };
 };
 
-export const login = async ({ email, password }) => {
+export const login = async ({ email, password }, session) => {
   const user = await User.findOne({ email }).select('+password');
 
   if (!user || !(await comparePassword(password, user.password))) {
@@ -55,7 +61,7 @@ export const login = async ({ email, password }) => {
     throw createError('User account is inactive', 403);
   }
 
-  const tokens = await issueTokens(user.id);
+  const tokens = await issueTokens(user.id, session);
   user.password = undefined;
 
   if (env.requireEmailVerification && !user.isEmailVerified) {
@@ -72,7 +78,7 @@ export const logout = async (refreshToken) => {
   }
 };
 
-export const refresh = async (refreshToken) => {
+export const refresh = async (refreshToken, session = {}) => {
   if (!refreshToken) {
     throw createError('Refresh token is required', 401);
   }
@@ -92,7 +98,38 @@ export const refresh = async (refreshToken) => {
     throw createError('Refresh token is not valid', 401);
   }
 
-  return issueTokens(user.id);
+  return issueTokens(user.id, {
+    userAgent: session.userAgent || storedToken.userAgent,
+    ipAddress: session.ipAddress || storedToken.ipAddress,
+  });
+};
+
+export const getActiveSessions = async (userId, currentRefreshToken) => {
+  const currentHash = currentRefreshToken ? hashToken(currentRefreshToken) : '';
+  const sessions = await AuthToken.find({ user: userId, expiresAt: { $gt: new Date() } })
+    .sort({ lastUsedAt: -1, createdAt: -1 })
+    .select('tokenHash userAgent ipAddress lastUsedAt createdAt expiresAt')
+    .lean();
+
+  return sessions.map(({ tokenHash, ...session }) => ({
+    ...session,
+    isCurrent: Boolean(currentHash && tokenHash === currentHash),
+  }));
+};
+
+export const revokeSession = async (userId, sessionId) => {
+  const session = await AuthToken.findOneAndDelete({ _id: sessionId, user: userId });
+  if (!session) throw createError('Session not found', 404);
+  return session;
+};
+
+export const revokeOtherSessions = async (userId, currentRefreshToken) => {
+  if (!currentRefreshToken) throw createError('Current session token is required', 400);
+  const result = await AuthToken.deleteMany({
+    user: userId,
+    tokenHash: { $ne: hashToken(currentRefreshToken) },
+  });
+  return { revoked: result.deletedCount };
 };
 
 export const getCurrentUser = async (userId) => {

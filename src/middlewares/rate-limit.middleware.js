@@ -7,7 +7,17 @@ export const globalRateLimiter = rateLimit({
   max: env.rateLimitMax,
   message: {
     success: false,
-    message: 'Too many requests, plese try again later',
+    message: 'Too many requests, please try again later',
+  },
+});
+
+export const loginRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  skipSuccessfulRequests: true,
+  message: {
+    success: false,
+    message: 'Too many unsuccessful login attempts. Please try again later',
   },
 });
 

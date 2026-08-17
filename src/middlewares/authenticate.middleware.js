@@ -1,6 +1,7 @@
 import { verifyAccessToken } from '../utils/jwt.js';
+import { AuthToken } from '../modules/auth/auth-token.model.js';
 
-export const authenticate = (request, _response, next) => {
+export const authenticate = async (request, _response, next) => {
   try {
     const bearerToken = request.headers.authorization?.split(' ')[1];
     const token = request.cookies.accessToken || bearerToken;
@@ -11,7 +12,23 @@ export const authenticate = (request, _response, next) => {
       return next(error);
     }
 
-    request.userId = verifyAccessToken(token).userId;
+    const payload = verifyAccessToken(token);
+    const session = payload.sessionId
+      ? await AuthToken.findOne({ _id: payload.sessionId, user: payload.userId }).select(
+          'lastUsedAt',
+        )
+      : null;
+    if (!session) {
+      const error = new Error('Session is no longer active');
+      error.statusCode = 401;
+      return next(error);
+    }
+
+    request.userId = payload.userId;
+    request.sessionId = payload.sessionId;
+    if (!session.lastUsedAt || Date.now() - session.lastUsedAt.getTime() > 5 * 60 * 1000) {
+      await AuthToken.updateOne({ _id: session._id }, { lastUsedAt: new Date() });
+    }
     return next();
   } catch {
     const error = new Error('Invalid or expired access token');
