@@ -16,7 +16,11 @@ export const register = async (request, response) => {
     success: true,
     message: 'Registration successful',
     data: result.user,
-    meta: { requiresEmailVerification: env.requireEmailVerification },
+    meta: {
+      requiresEmailVerification: env.requireEmailVerification,
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
+    },
   });
 };
 
@@ -28,12 +32,16 @@ export const login = async (request, response) => {
     success: true,
     message: 'Login successful',
     data: result.user,
-    meta: { requiresEmailVerification: result.requiresEmailVerification },
+    meta: {
+      requiresEmailVerification: result.requiresEmailVerification,
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
+    },
   });
 };
 
 export const logout = async (request, response) => {
-  await authService.logout(request.cookies[REFRESH_COOKIE]);
+  await authService.logout(request.cookies[REFRESH_COOKIE] || request.body?.refreshToken);
   response.clearCookie(ACCESS_COOKIE, accessCookieOptions);
   response.clearCookie(REFRESH_COOKIE, refreshCookieOptions);
 
@@ -41,10 +49,19 @@ export const logout = async (request, response) => {
 };
 
 export const refresh = async (request, response) => {
-  const tokens = await authService.refresh(request.cookies[REFRESH_COOKIE]);
+  const tokens = await authService.refresh(
+    request.cookies[REFRESH_COOKIE] || request.body?.refreshToken,
+  );
   setAuthCookies(response, tokens.accessToken, tokens.refreshToken);
 
-  return response.status(200).json({ success: true, message: 'Token refreshed' });
+  return response.status(200).json({
+    success: true,
+    message: 'Token refreshed',
+    meta: {
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+    },
+  });
 };
 
 export const getCurrentUser = async (request, response) => {
