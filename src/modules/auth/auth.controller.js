@@ -18,7 +18,7 @@ const sessionDetails = (request) => ({
 });
 
 const refreshTokenFrom = (request) =>
-  request.cookies[REFRESH_COOKIE] || request.body?.refreshToken || request.get('x-refresh-token');
+  request.body?.refreshToken || request.get('x-refresh-token') || request.cookies[REFRESH_COOKIE];
 
 export const register = async (request, response) => {
   const result = await authService.register(request.body, sessionDetails(request));

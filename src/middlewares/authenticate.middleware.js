@@ -3,8 +3,10 @@ import { AuthToken } from '../modules/auth/auth-token.model.js';
 
 export const authenticate = async (request, _response, next) => {
   try {
-    const bearerToken = request.headers.authorization?.split(' ')[1];
-    const token = request.cookies.accessToken || bearerToken;
+    const authorization = request.get('authorization') || '';
+    const [scheme, bearerToken] = authorization.split(' ');
+    const token =
+      scheme?.toLowerCase() === 'bearer' && bearerToken ? bearerToken : request.cookies.accessToken;
 
     if (!token) {
       const error = new Error('Authentication required');
