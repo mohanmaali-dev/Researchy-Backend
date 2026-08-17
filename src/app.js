@@ -6,6 +6,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 
 import { corsOptions } from './config/cors.js';
+import { connectDatabase } from './config/database.js';
 import { env } from './config/env.js';
 import { errorHandler } from './middlewares/error.middleware.js';
 import { notFoundHandler } from './middlewares/not-found.middleware.js';
@@ -25,6 +26,15 @@ app.use(cookieParser());
 app.use('/uploads', express.static(uploadDirectory));
 
 app.use(morgan('dev'));
+
+app.use(async (_request, _response, next) => {
+  try {
+    await connectDatabase();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
 
 app.use(env.apiPrefix, apiRouter);
 app.use(notFoundHandler);
