@@ -100,7 +100,7 @@ export const search = async (rawQuery, userId) => {
       .sort({ updatedAt: -1 })
       .limit(RESULT_LIMIT)
       .lean(),
-    Note.find({ user: userId, ...fieldsMatch(['title', 'content'], regex) })
+    Note.find({ user: userId, ...fieldsMatch(['title', 'content', 'tags'], regex) })
       .sort({ updatedAt: -1 })
       .limit(RESULT_LIMIT)
       .lean(),
@@ -277,7 +277,9 @@ export const search = async (rawQuery, userId) => {
     group(
       'notes',
       'Notes',
-      notes.map((item) => result(item._id, item.title, item.content, '/notes', item.updatedAt)),
+      notes.map((item) =>
+        result(item._id, item.title, item.content, `/notes/${item._id}`, item.updatedAt),
+      ),
     ),
   ].filter((item) => item.results.length);
 

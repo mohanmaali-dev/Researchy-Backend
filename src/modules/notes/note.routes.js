@@ -10,5 +10,6 @@ noteRouter.use(authenticate);
 
 noteRouter.get('/', noteController.getNotes);
 noteRouter.post('/', upload.single('image'), noteController.createNote);
+noteRouter.get('/:id', noteController.getNoteById);
 noteRouter.patch('/:id', upload.single('image'), noteController.updateNote);
 noteRouter.delete('/:id', noteController.deleteNote);

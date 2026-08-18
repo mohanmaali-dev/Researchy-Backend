@@ -2,8 +2,7 @@ import * as noteService from './note.service.js';
 
 export const createNote = async (request, response) => {
   const note = await noteService.createNote(request.userId, {
-    title: request.body.title,
-    content: request.body.content,
+    ...request.body,
     image: request.file ? `/uploads/${request.file.filename}` : null,
   });
 
@@ -15,20 +14,30 @@ export const createNote = async (request, response) => {
 };
 
 export const getNotes = async (request, response) => {
-  const notes = await noteService.getNotes(request.userId);
+  const result = await noteService.getNotes(request.userId, request.query);
 
   return response.status(200).json({
     success: true,
     message: 'Notes fetched successfully',
-    data: notes,
+    data: result.notes,
+    pagination: result.pagination,
+  });
+};
+
+export const getNoteById = async (request, response) => {
+  const note = await noteService.getNoteById(request.userId, request.params.id);
+
+  return response.status(200).json({
+    success: true,
+    message: 'Note fetched successfully',
+    data: note,
   });
 };
 
 export const updateNote = async (request, response) => {
   const note = await noteService.updateNote(request.userId, request.params.id, {
-    title: request.body.title,
-    content: request.body.content,
-    image: request.file ? `/uploads/${request.file.filename}` : null,
+    ...request.body,
+    ...(request.file ? { image: `/uploads/${request.file.filename}` } : {}),
   });
 
   return response.status(200).json({
