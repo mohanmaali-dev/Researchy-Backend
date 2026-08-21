@@ -8,3 +8,4 @@ export const demoDataRouter = Router();
 demoDataRouter.post('/', authenticate, demoDataController.createDemoData);
 demoDataRouter.post('/contacts', authenticate, demoDataController.createDemoContacts);
 demoDataRouter.post('/learning', authenticate, demoDataController.createDemoLearningData);
+demoDataRouter.post('/portfolio', authenticate, demoDataController.createDemoPortfolioData);

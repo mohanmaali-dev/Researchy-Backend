@@ -3,9 +3,11 @@ import {
   deleteProfileImage,
   deleteProjectImage,
   deleteResumePdf,
+  deleteTestimonialImage,
   saveProfileImage,
   saveProjectImage,
   saveResumePdf,
+  saveTestimonialImage,
 } from './portfolio-image.service.js';
 
 const ok = (response, message, data, extra = {}) => response.status(200).json({ success: true, message, data, ...extra });
@@ -160,3 +162,65 @@ export const getExperiences = async (request, response) => ok(response, 'Portfol
 export const createExperience = async (request, response) => response.status(201).json({ success: true, message: 'Portfolio experience created successfully', data: await portfolioService.createExperience(request.userId, request.body) });
 export const updateExperience = async (request, response) => ok(response, 'Portfolio experience updated successfully', await portfolioService.updateExperience(request.userId, request.params.id, request.body));
 export const deleteExperience = async (request, response) => { await portfolioService.deleteExperience(request.userId, request.params.id); return ok(response, 'Portfolio experience deleted successfully'); };
+
+export const getEducations = async (request, response) => ok(response, 'Portfolio education fetched successfully', await portfolioService.getEducations(request.userId));
+export const createEducation = async (request, response) => response.status(201).json({ success: true, message: 'Portfolio education created successfully', data: await portfolioService.createEducation(request.userId, request.body) });
+export const updateEducation = async (request, response) => ok(response, 'Portfolio education updated successfully', await portfolioService.updateEducation(request.userId, request.params.id, request.body));
+export const deleteEducation = async (request, response) => { await portfolioService.deleteEducation(request.userId, request.params.id); return ok(response, 'Portfolio education deleted successfully'); };
+
+export const getCertifications = async (request, response) => ok(response, 'Portfolio certifications fetched successfully', await portfolioService.getCertifications(request.userId));
+export const createCertification = async (request, response) => response.status(201).json({ success: true, message: 'Portfolio certification created successfully', data: await portfolioService.createCertification(request.userId, request.body) });
+export const updateCertification = async (request, response) => ok(response, 'Portfolio certification updated successfully', await portfolioService.updateCertification(request.userId, request.params.id, request.body));
+export const deleteCertification = async (request, response) => { await portfolioService.deleteCertification(request.userId, request.params.id); return ok(response, 'Portfolio certification deleted successfully'); };
+
+export const getServices = async (request, response) => ok(response, 'Portfolio services fetched successfully', await portfolioService.getServices(request.userId));
+export const createService = async (request, response) => response.status(201).json({ success: true, message: 'Portfolio service created successfully', data: await portfolioService.createService(request.userId, request.body) });
+export const updateService = async (request, response) => ok(response, 'Portfolio service updated successfully', await portfolioService.updateService(request.userId, request.params.id, request.body));
+export const deleteService = async (request, response) => { await portfolioService.deleteService(request.userId, request.params.id); return ok(response, 'Portfolio service deleted successfully'); };
+
+export const getTestimonials = async (request, response) => ok(response, 'Portfolio testimonials fetched successfully', await portfolioService.getTestimonials(request.userId));
+const testimonialBody = (body) => {
+  const data = { ...body };
+  if (typeof data.featured === 'string') data.featured = data.featured === 'true';
+  if (typeof data.displayOrder === 'string') data.displayOrder = Number(data.displayOrder);
+  if (typeof data.removeImage === 'string') data.removeImage = data.removeImage === 'true';
+  return data;
+};
+export const createTestimonial = async (request, response) => {
+  const data = testimonialBody(request.body);
+  const image = await saveTestimonialImage(request.file);
+  try {
+    const testimonial = await portfolioService.createTestimonial(request.userId, { ...data, ...(image || {}) });
+    return response.status(201).json({ success: true, message: 'Portfolio testimonial created successfully', data: testimonial });
+  } catch (error) {
+    await deleteTestimonialImage(image?.imagePublicId);
+    throw error;
+  }
+};
+export const updateTestimonial = async (request, response) => {
+  const current = await portfolioService.getTestimonial(request.userId, request.params.id);
+  const data = testimonialBody(request.body);
+  const image = await saveTestimonialImage(request.file);
+  if (image) Object.assign(data, image);
+  else if (data.removeImage) Object.assign(data, { imageUrl: '', imagePublicId: '' });
+  delete data.removeImage;
+  try {
+    const testimonial = await portfolioService.updateTestimonial(request.userId, request.params.id, data);
+    if (image || (!testimonial.imagePublicId && current.imagePublicId)) await deleteTestimonialImage(current.imagePublicId);
+    return ok(response, 'Portfolio testimonial updated successfully', testimonial);
+  } catch (error) {
+    await deleteTestimonialImage(image?.imagePublicId);
+    throw error;
+  }
+};
+export const deleteTestimonial = async (request, response) => {
+  const testimonial = await portfolioService.deleteTestimonial(request.userId, request.params.id);
+  await deleteTestimonialImage(testimonial.imagePublicId);
+  return ok(response, 'Portfolio testimonial deleted successfully');
+};
+
+export const bulkDelete = async (request, response) => ok(
+  response,
+  'Selected Portfolio records deleted successfully',
+  await portfolioService.bulkDelete(request.userId, request.body.entity, request.body.ids),
+);

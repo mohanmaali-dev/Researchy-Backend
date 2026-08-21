@@ -16,6 +16,7 @@ portfolioRouter.patch('/profile', portfolioProfileUpload.fields([
   { name: 'profileImage', maxCount: 1 },
   { name: 'resumeFile', maxCount: 1 },
 ]), portfolioController.saveProfile);
+portfolioRouter.post('/bulk-delete', portfolioController.bulkDelete);
 portfolioRouter.get('/contact-submissions', portfolioController.getContactMessages);
 portfolioRouter.patch('/contact-submissions/:id', portfolioController.updateContactMessage);
 portfolioRouter.delete('/contact-submissions/:id', portfolioController.deleteContactMessage);
@@ -33,3 +34,19 @@ portfolioRouter.get('/experiences', portfolioController.getExperiences);
 portfolioRouter.post('/experiences', portfolioController.createExperience);
 portfolioRouter.patch('/experiences/:id', portfolioController.updateExperience);
 portfolioRouter.delete('/experiences/:id', portfolioController.deleteExperience);
+portfolioRouter.get('/educations', portfolioController.getEducations);
+portfolioRouter.post('/educations', portfolioController.createEducation);
+portfolioRouter.patch('/educations/:id', portfolioController.updateEducation);
+portfolioRouter.delete('/educations/:id', portfolioController.deleteEducation);
+portfolioRouter.get('/certifications', portfolioController.getCertifications);
+portfolioRouter.post('/certifications', portfolioController.createCertification);
+portfolioRouter.patch('/certifications/:id', portfolioController.updateCertification);
+portfolioRouter.delete('/certifications/:id', portfolioController.deleteCertification);
+portfolioRouter.get('/services', portfolioController.getServices);
+portfolioRouter.post('/services', portfolioController.createService);
+portfolioRouter.patch('/services/:id', portfolioController.updateService);
+portfolioRouter.delete('/services/:id', portfolioController.deleteService);
+portfolioRouter.get('/testimonials', portfolioController.getTestimonials);
+portfolioRouter.post('/testimonials', portfolioImageUpload.single('image'), portfolioController.createTestimonial);
+portfolioRouter.patch('/testimonials/:id', portfolioImageUpload.single('image'), portfolioController.updateTestimonial);
+portfolioRouter.delete('/testimonials/:id', portfolioController.deleteTestimonial);
