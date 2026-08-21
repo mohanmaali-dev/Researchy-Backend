@@ -12,6 +12,13 @@ import { LearningTopic } from '../learning/learning-topic.model.js';
 import { Note } from '../notes/note.model.js';
 import { Opportunity } from '../opportunities/opportunity.model.js';
 import { Problem } from '../problems/problem.model.js';
+import {
+  PortfolioContactMessage,
+  PortfolioExperience,
+  PortfolioProfile,
+  PortfolioProject,
+  PortfolioSkill,
+} from '../portfolio/portfolio.model.js';
 
 export const BACKUP_FORMAT = '3v-workspace-backup';
 export const BACKUP_VERSION = 1;
@@ -31,6 +38,11 @@ const collections = [
   { key: 'learningPractices', model: LearningPractice },
   { key: 'learningQuestions', model: LearningQuestion },
   { key: 'notes', model: Note, privateToUser: true },
+  { key: 'portfolioProfiles', model: PortfolioProfile, privateToUser: true },
+  { key: 'portfolioProjects', model: PortfolioProject, privateToUser: true },
+  { key: 'portfolioSkills', model: PortfolioSkill, privateToUser: true },
+  { key: 'portfolioExperiences', model: PortfolioExperience, privateToUser: true },
+  { key: 'portfolioContactMessages', model: PortfolioContactMessage, privateToUser: true },
 ];
 
 const createError = (message, statusCode = 400) => {

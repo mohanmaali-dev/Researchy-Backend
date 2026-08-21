@@ -38,3 +38,40 @@ export const upload = multer({
     fileSize: 5 * 1024 * 1024,
   },
 });
+
+const portfolioImageTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+
+export const portfolioImageUpload = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: (_request, file, callback) => {
+    if (!portfolioImageTypes.has(file.mimetype)) {
+      const error = new Error('Images must be JPG, PNG, WEBP, or GIF files');
+      error.statusCode = 400;
+      return callback(error);
+    }
+    return callback(null, true);
+  },
+  limits: {
+    fileSize: 5 * 1024 * 1024,
+  },
+});
+
+export const portfolioProfileUpload = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: (_request, file, callback) => {
+    const validProfileImage = file.fieldname === 'profileImage' && portfolioImageTypes.has(file.mimetype);
+    const validResume = file.fieldname === 'resumeFile' && file.mimetype === 'application/pdf';
+    if (!validProfileImage && !validResume) {
+      const error = new Error(file.fieldname === 'resumeFile'
+        ? 'Resume must be a PDF file'
+        : 'Profile image must be a JPG, PNG, WEBP, or GIF file');
+      error.statusCode = 400;
+      return callback(error);
+    }
+    return callback(null, true);
+  },
+  limits: {
+    fileSize: 10 * 1024 * 1024,
+    files: 2,
+  },
+});

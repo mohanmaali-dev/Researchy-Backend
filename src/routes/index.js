@@ -13,6 +13,7 @@ import { learningRouter } from '../modules/learning/learning.routes.js';
 import { noteRouter } from '../modules/notes/note.routes.js';
 import { opportunityRouter } from '../modules/opportunities/opportunity.routes.js';
 import { problemRouter } from '../modules/problems/problem.routes.js';
+import { portfolioRouter } from '../modules/portfolio/portfolio.routes.js';
 import { searchRouter } from '../modules/search/search.routes.js';
 import { userRouter } from '../modules/users/user.routes.js';
 
@@ -40,6 +41,7 @@ apiRouter.use('/contacts', authenticate, contactRouter);
 apiRouter.use('/dashboard', authenticate, dashboardRouter);
 apiRouter.use('/demo-data', demoDataRouter);
 apiRouter.use('/problems', authenticate, problemRouter);
+apiRouter.use('/portfolio', portfolioRouter);
 apiRouter.use('/opportunities', authenticate, opportunityRouter);
 apiRouter.use('/follow-ups', authenticate, followUpRouter);
 apiRouter.use('/learning', learningRouter);

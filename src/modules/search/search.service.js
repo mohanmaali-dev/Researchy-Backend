@@ -10,6 +10,11 @@ import { LearningTopic } from '../learning/learning-topic.model.js';
 import { Note } from '../notes/note.model.js';
 import { Opportunity } from '../opportunities/opportunity.model.js';
 import { Problem } from '../problems/problem.model.js';
+import {
+  PortfolioExperience,
+  PortfolioProject,
+  PortfolioSkill,
+} from '../portfolio/portfolio.model.js';
 
 const RESULT_LIMIT = 6;
 const LEARNING_LIMIT = 8;
@@ -56,6 +61,9 @@ export const search = async (rawQuery, userId) => {
     practices,
     questions,
     notes,
+    portfolioProjects,
+    portfolioSkills,
+    portfolioExperiences,
   ] = await Promise.all([
     Business.find(businessFilter).sort({ updatedAt: -1 }).limit(RESULT_LIMIT).lean(),
     Business.find(businessFilter).distinct('_id'),
@@ -101,6 +109,18 @@ export const search = async (rawQuery, userId) => {
       .limit(RESULT_LIMIT)
       .lean(),
     Note.find({ user: userId, ...fieldsMatch(['title', 'content', 'tags'], regex) })
+      .sort({ updatedAt: -1 })
+      .limit(RESULT_LIMIT)
+      .lean(),
+    PortfolioProject.find({ user: userId, ...fieldsMatch(['title', 'shortDescription', 'description', 'technologies'], regex) })
+      .sort({ updatedAt: -1 })
+      .limit(RESULT_LIMIT)
+      .lean(),
+    PortfolioSkill.find({ user: userId, ...fieldsMatch(['name', 'category'], regex) })
+      .sort({ updatedAt: -1 })
+      .limit(RESULT_LIMIT)
+      .lean(),
+    PortfolioExperience.find({ user: userId, ...fieldsMatch(['company', 'position', 'location', 'description'], regex) })
       .sort({ updatedAt: -1 })
       .limit(RESULT_LIMIT)
       .lean(),
@@ -280,6 +300,15 @@ export const search = async (rawQuery, userId) => {
       notes.map((item) =>
         result(item._id, item.title, item.content, `/notes/${item._id}`, item.updatedAt),
       ),
+    ),
+    group(
+      'portfolio',
+      'Portfolio',
+      [
+        ...portfolioProjects.map((item) => result(item._id, item.title, `Project · ${item.status}`, `/portfolio/projects/${item._id}/edit`, item.updatedAt)),
+        ...portfolioSkills.map((item) => result(item._id, item.name, `Skill · ${item.category}`, '/portfolio/skills', item.updatedAt)),
+        ...portfolioExperiences.map((item) => result(item._id, `${item.position} at ${item.company}`, 'Experience', '/portfolio/experience', item.updatedAt)),
+      ].sort((first, second) => new Date(second.updatedAt) - new Date(first.updatedAt)).slice(0, RESULT_LIMIT),
     ),
   ].filter((item) => item.results.length);
 
