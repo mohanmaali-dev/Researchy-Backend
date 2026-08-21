@@ -64,6 +64,13 @@ export const saveProjectImage = (file) => saveImage(file, {
   resultFields: (result) => ({ imagePublicId: result.public_id, imageUrl: result.secure_url }),
 });
 
+export const saveTestimonialImage = (file) => saveImage(file, {
+  folder: '3v-workspace/portfolio-testimonials',
+  invalidMessage: 'The selected file is not a valid testimonial image',
+  uploadMessage: 'Testimonial image could not be uploaded',
+  resultFields: (result) => ({ imagePublicId: result.public_id, imageUrl: result.secure_url }),
+});
+
 export const saveProfileImage = (file) => {
   if (file?.size > 5 * 1024 * 1024) throw createError('Profile image cannot exceed 5 MB', 400);
   return saveImage(file, {
@@ -111,5 +118,6 @@ const deleteImage = async (publicId) => {
 };
 
 export const deleteProjectImage = deleteImage;
+export const deleteTestimonialImage = deleteImage;
 export const deleteProfileImage = deleteImage;
 export const deleteResumePdf = deleteImage;

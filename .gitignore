@@ -1,6 +1,4 @@
 node_modules/
-.env
-.env.*
 !.env.example
 coverage/
 dist/
@@ -9,6 +7,6 @@ logs/
 npm-debug.log*
 .DS_Store
 .idea/
-.vscode/
 uploads/*
 !uploads/.gitkeep
+config.bat

@@ -1,6 +1,7 @@
 import { upsertDemoData } from '../../scripts/seed-demo-data.js';
 import { upsertDemoContacts } from './demo-contact-data.js';
 import { upsertDemoLearningData } from './demo-learning-data.js';
+import { upsertDemoPortfolioData } from './demo-portfolio-data.js';
 
 export const createDemoData = async (_request, response) => {
   const counts = await upsertDemoData();
@@ -30,4 +31,9 @@ export const createDemoLearningData = async (_request, response) => {
     message: 'Demo Learning data is ready',
     data: counts,
   });
+};
+
+export const createDemoPortfolioData = async (request, response) => {
+  const counts = await upsertDemoPortfolioData(request.userId);
+  return response.status(201).json({ success: true, message: 'Portfolio demo data is ready', data: counts });
 };
